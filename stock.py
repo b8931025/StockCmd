@@ -35,13 +35,22 @@ def getStockInfo(stockId):
     infoTexts = soup.select("li > span.C\(\#232a31\)")
     infoValues = soup.select("li > span.Fw\(600\)")
 
+    priceDone = 0
+    priceLastDay = 0
     columns = []
     for idx, column in enumerate(infoTexts):
-        if (column.text == "成交" or 
-            column.text == "漲跌幅" or 
-            column.text == "漲跌" or 
-            column.text == "昨收" ):
+        if (column.text == "成交" or
+            column.text == "昨收" or
+            column.text == "漲跌" or
+            column.text == "漲跌幅"):
             columns.append(column.text + ":" + infoValues[idx].text)
+        if column.text == "成交" : priceDone = float(infoValues[idx].text)
+        if column.text == "昨收" : priceLastDay = float(infoValues[idx].text)
+
+    #下跌加負號
+    if priceLastDay > priceDone :
+        columns[2] = columns[2].replace(":",":-")
+        columns[3] = columns[3].replace(":",":-")
 
     #sort
     infos.append(columns[0]) #成交
@@ -82,40 +91,59 @@ def getTWII():
     return '\t'.join(output)
 
 #取得公司名稱與股票代號清單
-def getCompanyList(keyWord = ""):
+def getCompanyList(keyWord = "",market = ""):
     url1 = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
     url2 = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes"
     listTotal = []
     
     #上市資料
-    result = requests.get(url1)
-    result.encoding ="utf-8"
-    jsonObj1 = json.loads(result.text)
+    if market == "" or market == "m":
+        result = requests.get(url1)
+        result.encoding ="utf-8"
+        jsonObj1 = json.loads(result.text)
 
-    #json object to dataframe
-    df = pd.json_normalize(jsonObj1)
-    df = df[["公司簡稱","公司代號"]]
-    if keyWord != "" : df = df[df['公司簡稱'].str.contains(keyWord)]
+        #json object to dataframe
+        df = pd.json_normalize(jsonObj1)
+        df = df[["公司簡稱","公司代號"]]
+        if keyWord != "" : df = df[df['公司簡稱'].str.contains(keyWord)]
 
-    listName = df["公司簡稱"].tolist()
-    listCode = df["公司代號"].tolist()
-    for idx,name in enumerate(listName):
-        listTotal.append(f"{listCode[idx]}:{name}")
+        listName = df["公司簡稱"].tolist()
+        listCode = df["公司代號"].tolist()
+        for idx,name in enumerate(listName):
+            listTotal.append(f"{listCode[idx]}:{name}")
 
     #上櫃資料
-    result = requests.get(url2)
-    result.encoding ="utf-8"
-    jsonObj2 = json.loads(result.text)
+    if market == "" or market == "o":
+        result = requests.get(url2)
+        result.encoding ="utf-8"
+        jsonObj2 = json.loads(result.text)
 
-    #json object to dataframe
-    df = pd.json_normalize(jsonObj2)
-    df.rename(columns = {'SecuritiesCompanyCode':'公司代號', 'CompanyName':'公司簡稱'}, inplace = True)
-    df = df[["公司簡稱","公司代號"]]
-    if keyWord != "" : df = df[df['公司簡稱'].str.contains(keyWord)]
+        #json object to dataframe
+        df = pd.json_normalize(jsonObj2)
+        df.rename(columns = {'SecuritiesCompanyCode':'公司代號', 'CompanyName':'公司簡稱'}, inplace = True)
+        df = df[["公司簡稱","公司代號"]]
+        if keyWord != "" : df = df[df['公司簡稱'].str.contains(keyWord)]
 
-    listName = df["公司簡稱"].tolist()
-    listCode = df["公司代號"].tolist()
-    for idx,name in enumerate(listName):
-        listTotal.append(f"{listCode[idx]}:{name}")
+        listName = df["公司簡稱"].tolist()
+        listCode = df["公司代號"].tolist()
+        for idx,name in enumerate(listName):
+            listTotal.append(f"{listCode[idx]}:{name}")
 
-    return "\n".join(listTotal)    
+    return "\n".join(listTotal)
+
+#查詢公司名稱與股票代號
+def queryCompany(keyWord,only = ""):
+    if keyWord == "" :
+        print("請輸入查詢關鍵字")
+    else:
+        list = ""
+        if only == "--only-m" :
+            list = getCompanyList(keyWord,"m")
+        elif only == "--only-o" :
+            list = getCompanyList(keyWord,"o")
+        elif only != "":
+            print(f"錯誤的參數 {only}")
+            sys.exit(0)
+        else:
+            list = getCompanyList(keyWord)
+        return list

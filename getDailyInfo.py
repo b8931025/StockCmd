@@ -3,9 +3,9 @@ from stock import *
 import sys
 
 '''
-#問題
+<<待調整>>
 價跌時沒有負號
-
+引用.json設定檔
 
 '''
 
@@ -21,8 +21,10 @@ msgHelp = '''
 功能參數
 -m         :  取得即時股市資訊-觀察清單
 -i  stockId:  取得即時個股報價
--q  keyWord:  查詢公司名稱與股票代號
+-q  keyWord:  查詢公司名稱與股票代號 
 -list      :  列出上市櫃所有各股
+-only-m    :  只有上市
+-only-o    :  只有上櫃
 '''
 
 def show(txt):
@@ -55,22 +57,20 @@ if __name__ == '__main__':
     argsLen = len(args)
     arg1 = ""
     arg2 = ""
+    arg3 = ""
     if argsLen > 1 : arg1 = args[1]
     if argsLen > 2 : arg2 = args[2]
+    if argsLen > 3 : arg3 = args[3]
 
     if arg1 == "-m" :
         #取得即時股市資訊-觀察清單
         main()
     elif arg1 == "-q" :
         #查詢公司名稱與股票代號
-        if arg2 == "" :
-            print("請輸入查詢關鍵字")
-        else:
-            list = getCompanyList(arg2)
-            print(list)
+        print(queryCompany(arg2,arg3))
     elif arg1 == "-list" :
         #列出上市櫃所有各股
-        list = getCompanyList("")
+        list = getCompanyList()
         print(list)
         #寫入檔案
         f = open(fileNameAllCompany,"w", encoding='UTF-8')
