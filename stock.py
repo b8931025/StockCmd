@@ -102,10 +102,8 @@ def getCompanyList(keyWord = "",market = ""):
     if market == "" or market == "m":
         result = requests.get(url1)
         result.encoding ="utf-8"
-        jsonObj1 = json.loads(result.text)
-
         #json object to dataframe
-        df = pd.json_normalize(jsonObj1)
+        df = pd.read_json(result.text)
         df.rename(columns = {'公司簡稱':'name', '公司代號':'code'}, inplace = True)
         df = df[["code","name"]]
         if keyWord != "" : df = df[df['name'].str.contains(keyWord)]
@@ -119,10 +117,8 @@ def getCompanyList(keyWord = "",market = ""):
     if market == "" or market == "o":
         result = requests.get(url2)
         result.encoding ="utf-8"
-        jsonObj2 = json.loads(result.text)
-
         #json object to dataframe
-        df = pd.json_normalize(jsonObj2)
+        df = pd.read_json(result.text)
         df.rename(columns = {'SecuritiesCompanyCode':'code', 'CompanyName':'name'}, inplace = True)
         df = df[["code","name"]]
         if keyWord != "" : df = df[df['name'].str.contains(keyWord)]
