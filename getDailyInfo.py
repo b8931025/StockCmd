@@ -1,10 +1,8 @@
 from sre_constants import JUMP
 from stock import *
 import sys
-
 '''
 <<待調整>>
-價跌時沒有負號
 引用.json設定檔
 
 '''
@@ -25,6 +23,7 @@ msgHelp = '''
 -list      :  列出上市櫃所有各股
 -only-m    :  只有上市
 -only-o    :  只有上櫃
+-only-o    :  只有ETF
 '''
 
 def show(txt):
@@ -33,8 +32,10 @@ def show(txt):
 def main():
     #大盤
     twMarket = getTWII()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    show(now)
     show(twMarket)
-    fileData = [twMarket]
+    fileData = [now,twMarket]
 
     #觀查個股
     list = getStockList()
@@ -44,12 +45,12 @@ def main():
         fileData.append(_stock)
 
     #寫入檔案
-    openTextMode = "w" # w:write a:append r:read
+    openTextMode = "a" # w:write a:append r:read
     f = open(fileNameDailyStockInfo,openTextMode, encoding='UTF-8')
 
-    #append模式就換行
-    if (openTextMode == "a"): f.write("\n")
     f.write("\n".join(fileData))
+    #插入空白行
+    f.write("\n\n")
     f.close()
 
 if __name__ == '__main__':

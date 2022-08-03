@@ -5,6 +5,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import json
 import pandas as pd
+import lxml
 
 #取得觀察個股清單
 def getStockList():
@@ -94,6 +95,7 @@ def getTWII():
 def getCompanyList(keyWord = "",market = ""):
     url1 = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
     url2 = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes"
+    url3 = "https://www.twse.com.tw/zh/ETF/list"
     listTotal = []
     
     #上市資料
@@ -104,13 +106,14 @@ def getCompanyList(keyWord = "",market = ""):
 
         #json object to dataframe
         df = pd.json_normalize(jsonObj1)
-        df = df[["公司簡稱","公司代號"]]
-        if keyWord != "" : df = df[df['公司簡稱'].str.contains(keyWord)]
+        df.rename(columns = {'公司簡稱':'name', '公司代號':'code'}, inplace = True)
+        df = df[["code","name"]]
+        if keyWord != "" : df = df[df['name'].str.contains(keyWord)]
 
-        listName = df["公司簡稱"].tolist()
-        listCode = df["公司代號"].tolist()
+        listName = df["name"].tolist()
+        listCode = df["code"].tolist()
         for idx,name in enumerate(listName):
-            listTotal.append(f"{listCode[idx]}:{name}")
+            listTotal.append(f"{listCode[idx]}:{name}:上市")
 
     #上櫃資料
     if market == "" or market == "o":
@@ -120,14 +123,27 @@ def getCompanyList(keyWord = "",market = ""):
 
         #json object to dataframe
         df = pd.json_normalize(jsonObj2)
-        df.rename(columns = {'SecuritiesCompanyCode':'公司代號', 'CompanyName':'公司簡稱'}, inplace = True)
-        df = df[["公司簡稱","公司代號"]]
-        if keyWord != "" : df = df[df['公司簡稱'].str.contains(keyWord)]
+        df.rename(columns = {'SecuritiesCompanyCode':'code', 'CompanyName':'name'}, inplace = True)
+        df = df[["code","name"]]
+        if keyWord != "" : df = df[df['name'].str.contains(keyWord)]
 
-        listName = df["公司簡稱"].tolist()
-        listCode = df["公司代號"].tolist()
+        listName = df["name"].tolist()
+        listCode = df["code"].tolist()
         for idx,name in enumerate(listName):
-            listTotal.append(f"{listCode[idx]}:{name}")
+            listTotal.append(f"{listCode[idx]}:{name}:上櫃")
+
+    #上市etf資料
+    if market == "" or market == "e":
+        df = pd.read_html(url3)
+        df = df[0]
+        df.rename(columns = {'證券代號':'code', '證券簡稱':'name'}, inplace = True)
+        df = df[["code","name"]]
+        if keyWord != "" : df = df[df['name'].str.contains(keyWord)]
+
+        listName = df["name"].tolist()
+        listCode = df["code"].tolist()
+        for idx,name in enumerate(listName):
+            listTotal.append(f"{listCode[idx]}:{name}:ETF")       
 
     return "\n".join(listTotal)
 
@@ -141,6 +157,8 @@ def queryCompany(keyWord,only = ""):
             list = getCompanyList(keyWord,"m")
         elif only == "--only-o" :
             list = getCompanyList(keyWord,"o")
+        elif only == "--only-e" :
+            list = getCompanyList(keyWord,"e")
         elif only != "":
             print(f"錯誤的參數 {only}")
             sys.exit(0)
