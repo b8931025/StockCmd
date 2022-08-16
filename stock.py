@@ -35,7 +35,7 @@ def getStockInfo(stockId):
     soup  = BeautifulSoup(str(infoArea), 'html.parser') #將soup範圍縮小
     infoTexts = soup.select("li > span.C\(\#232a31\)")
     infoValues = soup.select("li > span.Fw\(600\)")
-
+    
     priceDone = 0
     priceLastDay = 0
     columns = []
@@ -45,8 +45,9 @@ def getStockInfo(stockId):
             column.text == "漲跌" or
             column.text == "漲跌幅"):
             columns.append(column.text + ":" + infoValues[idx].text)
-        if column.text == "成交" : priceDone = float(infoValues[idx].text)
-        if column.text == "昨收" : priceLastDay = float(infoValues[idx].text)
+
+        if column.text == "成交" and infoValues[idx].text != "-" : priceDone = float(infoValues[idx].text)
+        if column.text == "昨收" and infoValues[idx].text != "-" : priceLastDay = float(infoValues[idx].text)
 
     #下跌加負號
     if priceLastDay > priceDone :
